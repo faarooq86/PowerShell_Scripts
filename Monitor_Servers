@@ -1,0 +1,134 @@
+### Script starts here
+
+Function Ping-server {
+param([string]$ServerName)
+$pingsrv = Test-Connection -ComputerName $ServerName
+if ($pingsrv){Write-Host "server " $ServerName "is reachable.."}else {Write-Host "server " $ServerName " is not reachable!!!!, please chack..."}
+}
+
+function get-volsize {
+param([string]$ServerName)
+$getvols = Get-WmiObject -Class CIM_LogicalDisk -ComputerName $ServerName  | where {$_.DriveType -eq "3"}
+foreach ($rr in $getvols)
+{
+$devid = $rr.DeviceID
+$VolName = $rr.VolumeName
+$DriveFullsp = $rr.Size
+$DriveFresp = $rr.FreeSpace
+$UsedSpace = $DriveFullsp - $DriveFresp
+$PercentFree =($DriveFresp / $DriveFullsp) * 100
+Write-Host "Device ID is: "  $devid
+Write-Host "Volume name is "   $VolName
+Write-Host "Full Size is: "  $DriveFullsp
+Write-Host "Free space is: "  $DriveFresp
+Write-Host "Used Space is: "  $UsedSpace
+Write-Host "Free Percantage is "  $PercentFree
+[System.Environment]::NewLine
+}
+
+
+
+}
+
+
+
+function get-svrdets {
+param([string]$ServerName)
+$srvdets = Get-WmiObject -class CIM_ComputerSystem -ComputerName $ServerName
+foreach ($sr in $srvdets)
+{
+$SrvName = (Get-WmiObject -class CIM_ComputerSystem -ComputerName $ServerName  ).Name
+$SrvDomain = (Get-WmiObject -class CIM_ComputerSystem -ComputerName $ServerName ).Domain
+$manu = (Get-WmiObject -class CIM_ComputerSystem -ComputerName $ServerName).Manufacturer
+$SrvMod = (Get-WmiObject -class CIM_ComputerSystem -ComputerName $ServerName).Model
+
+Write-Host "Server name is: " $SrvName
+Write-Host "Server domain is: " $SrvDomain
+Write-Host "Server Manufacturer is: " $manu
+Write-Host "Server model is: " $SrvMod
+[System.Environment]::NewLine
+}
+
+}
+
+
+function get-mem {
+param([string]$ServerName)
+$SrvTotalMem = (Get-WmiObject win32_OperatingSystem -ComputerName $ServerName).totalvisiblememorysize
+$SrvFreeMem = (Get-WmiObject win32_OperatingSystem -ComputerName $ServerName).freephysicalmemory
+$SrvTotalVirtualMem = (Get-WmiObject win32_OperatingSystem -ComputerName $ServerName).totalvirtualmemorysize
+$SrvFreeVirtualMemory = (Get-WmiObject win32_OperatingSystem -ComputerName $ServerName).freevirtualmemory
+$SrvUsedMem = $SrvTotalMem - $SrvFreeMem
+$SrvVirtualMemUsed = $SrvTotalVirtualMem - $SrvFreeVirtualMemory
+$MemPercentFree =($SrvFreeMem / $SrvTotalMem) * 100
+$Virtualmempercentfree = ($SrvFreeVirtualMemory / $SrvTotalVirtualMem) * 100
+
+Write-Host "Total Memory is: " $SrvTotalMem
+Write-Host "Free Memory is: " $SrvFreeMem
+Write-Host "Total Virtual Memory is: " $SrvTotalVirtualMem
+Write-Host "Free Virtual Memory is: " $SrvFreeVirtualMemory
+Write-Host "Physical Memory usage is: " $SrvUsedMem
+Write-Host "Virtual Memory usage is :" $SrvVirtualMemUsed
+Write-Host "Physical Memory Free percantage: " $MemPercentFree
+Write-Host "Virtual memory Free percantage: " $Virtualmempercentfree
+[System.Environment]::NewLine
+
+
+}
+
+
+function get-proc {
+param([string]$ServerName)
+$SrvProcessAvg = (Get-WmiObject win32_processor -ComputerName $ServerName| Measure-Object -property LoadPercentage -Average).Average
+
+Write-Host "Physical processor usage is: " $SrvProcessAvg
+[System.Environment]::NewLine
+}
+
+function get-mysqlservice {
+param([string]$ServerName)
+if (Get-Service -Name MYSQL* -ComputerName $ServerName -ErrorAction SilentlyContinue){
+
+$mysqlstatus = (Get-Service -Name MYSQL* -ComputerName $ServerName -ErrorAction SilentlyContinue).Status
+if ($mysqlstatus -eq "stopped"){Write-host "Mysql service is down, please check!!!!!"}else {Write-Host "MYSQL service is running normally"}
+}
+else {Write-Host "MYSQL service is not insatlled on server"}
+[System.Environment]::NewLine
+}
+
+
+function get-mssqlservice {
+param([string]$ServerName)
+if (Get-Service -Name MSSQLSERVER -ComputerName $ServerName -ErrorAction SilentlyContinue){
+
+$mysqlstatus = (Get-Service -Name MSSQLSERVER -ComputerName $ServerName -ErrorAction SilentlyContinue).Status
+if ($mysqlstatus -eq "stopped"){Write-host "Mysql service is down, please check!!!!!"}else {Write-Host "MYSQL service is running normally"}
+}
+else {Write-Host "MSSQLSERVER service is not insatlled on server"}
+[System.Environment]::NewLine
+
+}
+ping-server -ServerName "localhost"
+get-volsize -ServerName "localhost"
+get-svrdets -ServerName "localhost"
+get-mem -ServerName "localhost"
+
+
+# Script Ends here
+
+
+You can notice that the script is nothing but a group of functions, each function will monitor a certain thing.
+
+you can loop servers from a text file, for example in this line you can write :
+
+
+$r = get-content -path ".\somefile.txt" 
+foreach ($rr in $r){
+
+
+ping-server -ServerName $rr
+get-volsize -ServerName $rr
+get-svrdets -ServerName $rr
+get-mem -ServerName $rr
+
+} 
