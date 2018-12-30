@@ -1,0 +1,1 @@
+Get-NetAdapterBinding -ComponentID "ms_tcpip6" | Disable-NetAdapterBinding
